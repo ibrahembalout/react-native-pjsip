@@ -1,7 +1,7 @@
 package com.carusto.ReactNativePjSip.dto;
 
 import android.content.Intent;
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Map;
 
