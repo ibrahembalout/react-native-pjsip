@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION="2.10"
+VERSION="v2.9.0"
 URL="https://github.com/codeion/react-native-pjsip-builder/releases/download/${VERSION}/release.tar.gz"
 LOCK=".libs.lock"
 DEST=".libs.tar.gz"
