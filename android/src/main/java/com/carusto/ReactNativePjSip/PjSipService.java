@@ -153,6 +153,13 @@ public class PjSipService extends Service {
     private void load() {
         // Load native libraries
         try {
+            System.loadLibrary("c++_shared");
+        } catch (UnsatisfiedLinkError error) {
+            Log.e(TAG, "Error while loading libc++_shared native library", error);
+            throw new RuntimeException(error);
+        }
+
+        try {
             System.loadLibrary("openh264");
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "Error while loading OpenH264 native library", error);
@@ -170,76 +177,98 @@ public class PjSipService extends Service {
         try {
             mEndpoint = new Endpoint();
             mEndpoint.libCreate();
-            mEndpoint.libRegisterThread(Thread.currentThread().getName());
 
-            // Register main thread
-            Handler uiHandler = new Handler(Looper.getMainLooper());
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-            uiHandler.post(runnable);
-
-            // Configure endpoint
             EpConfig epConfig = new EpConfig();
-
-            epConfig.getLogConfig().setLevel(1);
-            epConfig.getLogConfig().setConsoleLevel(1);
-
-            mLogWriter = new PjSipLogWriter();
-            epConfig.getLogConfig().setWriter(mLogWriter);
-
-            if (mServiceConfiguration.isUserAgentNotEmpty()) {
-                epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
-            } else {
-                epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
-            }
-
-            if (mServiceConfiguration.isStunServersNotEmpty()) {
-                epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
-            }
-
+            epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
             epConfig.getMedConfig().setHasIoqueue(true);
-            epConfig.getMedConfig().setClockRate(8000);
-            epConfig.getMedConfig().setQuality(4);
+            epConfig.getMedConfig().setClockRate(16000);
+            epConfig.getMedConfig().setQuality(10);
             epConfig.getMedConfig().setEcOptions(1);
             epConfig.getMedConfig().setEcTailLen(200);
             epConfig.getMedConfig().setThreadCnt(2);
             mEndpoint.libInit(epConfig);
 
-            mTrash.add(epConfig);
+            TransportConfig udpTransport = new TransportConfig();
+            udpTransport.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+            TransportConfig tcpTransport = new TransportConfig();
+            tcpTransport.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
 
-            // Configure transports
-            {
-                TransportConfig transportConfig = new TransportConfig();
-                transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                mUdpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,
-                        transportConfig);
-                mTrash.add(transportConfig);
-            }
-            {
-                TransportConfig transportConfig = new TransportConfig();
-                transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                mTcpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP,
-                        transportConfig);
-                mTrash.add(transportConfig);
-            }
-            {
-                // TransportConfig transportConfig = new TransportConfig();
-                // transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                // mTlsTransportId =
-                // mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS,
-                // transportConfig);
-                // mTrash.add(transportConfig);
-            }
-
+            mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, udpTransport);
+            mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP, tcpTransport);
             mEndpoint.libStart();
+
+//             mEndpoint = new Endpoint();
+//             mEndpoint.libCreate();
+//             mEndpoint.libRegisterThread(Thread.currentThread().getName());
+//
+//             // Register main thread
+//             Handler uiHandler = new Handler(Looper.getMainLooper());
+//             Runnable runnable = new Runnable() {
+//                 @Override
+//                 public void run() {
+//                     try {
+//                         mEndpoint.libRegisterThread(Thread.currentThread().getName());
+//                     } catch (Exception e) {
+//                         e.printStackTrace();
+//                     }
+//                 }
+//             };
+//             uiHandler.post(runnable);
+//
+//             // Configure endpoint
+//             EpConfig epConfig = new EpConfig();
+//
+//             epConfig.getLogConfig().setLevel(1);
+//             epConfig.getLogConfig().setConsoleLevel(1);
+//
+//             mLogWriter = new PjSipLogWriter();
+//             epConfig.getLogConfig().setWriter(mLogWriter);
+//
+//             if (mServiceConfiguration.isUserAgentNotEmpty()) {
+//                 epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
+//             } else {
+//                 epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
+//             }
+//
+//             if (mServiceConfiguration.isStunServersNotEmpty()) {
+//                 epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
+//             }
+//
+//             epConfig.getMedConfig().setHasIoqueue(true);
+//             epConfig.getMedConfig().setClockRate(8000);
+//             epConfig.getMedConfig().setQuality(4);
+//             epConfig.getMedConfig().setEcOptions(1);
+//             epConfig.getMedConfig().setEcTailLen(200);
+//             epConfig.getMedConfig().setThreadCnt(2);
+//             mEndpoint.libInit(epConfig);
+//
+//             mTrash.add(epConfig);
+//
+//             // Configure transports
+//             {
+//                 TransportConfig transportConfig = new TransportConfig();
+//                 transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+//                 mUdpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,
+//                         transportConfig);
+//                 mTrash.add(transportConfig);
+//             }
+//             {
+//                 TransportConfig transportConfig = new TransportConfig();
+//                 transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+//                 mTcpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP,
+//                         transportConfig);
+//                 mTrash.add(transportConfig);
+//             }
+//             {
+//                 // TransportConfig transportConfig = new TransportConfig();
+//                 // transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+//                 // mTlsTransportId =
+//                 // mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS,
+//                 // transportConfig);
+//                 // mTrash.add(transportConfig);
+//             }
+//
+//             mEndpoint.libStart();
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
         }
