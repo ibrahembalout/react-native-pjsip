@@ -179,6 +179,12 @@ public class PjSipService extends Service {
             mEndpoint.libCreate();
 
             EpConfig epConfig = new EpConfig();
+
+            epConfig.getLogConfig().setLevel(1);
+            epConfig.getLogConfig().setConsoleLevel(1);
+            mLogWriter = new PjSipLogWriter();
+            epConfig.getLogConfig().setWriter(mLogWriter);
+
             epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
             epConfig.getMedConfig().setHasIoqueue(true);
             epConfig.getMedConfig().setClockRate(16000);
@@ -201,19 +207,19 @@ public class PjSipService extends Service {
 //             mEndpoint.libCreate();
 //             mEndpoint.libRegisterThread(Thread.currentThread().getName());
 //
-//             // Register main thread
-//             Handler uiHandler = new Handler(Looper.getMainLooper());
-//             Runnable runnable = new Runnable() {
-//                 @Override
-//                 public void run() {
-//                     try {
-//                         mEndpoint.libRegisterThread(Thread.currentThread().getName());
-//                     } catch (Exception e) {
-//                         e.printStackTrace();
-//                     }
-//                 }
-//             };
-//             uiHandler.post(runnable);
+            // Register main thread
+            Handler uiHandler = new Handler(Looper.getMainLooper());
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mEndpoint.libRegisterThread(Thread.currentThread().getName());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            uiHandler.post(runnable);
 //
 //             // Configure endpoint
 //             EpConfig epConfig = new EpConfig();
@@ -386,11 +392,11 @@ public class PjSipService extends Service {
         mAccounts.remove(account);
 
         // Remove transport
-        try {
-            mEndpoint.transportClose(account.getTransportId());
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to close transport for account", e);
-        }
+//         try {
+//             mEndpoint.transportClose(account.getTransportId());
+//         } catch (Exception e) {
+//             Log.w(TAG, "Failed to close transport for account", e);
+//         }
 
         // Remove account in PjSip
         account.delete();
