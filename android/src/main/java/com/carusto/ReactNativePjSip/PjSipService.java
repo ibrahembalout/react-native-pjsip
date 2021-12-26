@@ -61,11 +61,17 @@ import org.pjsip.pjsua2.pjsip_transport_type_e;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class PjSipService extends Service {
 
     private static String TAG = "PjSipService";
+
+    private static String ACCOUNTS = "ACCOUNTS";
 
     public static final String STARTED_FROM_SERVICE = "started_from_service";
 
@@ -90,6 +96,8 @@ public class PjSipService extends Service {
     private PjSipBroadcastEmiter mEmitter;
 
     private List<PjSipAccount> mAccounts = new ArrayList<>();
+
+    private List<AccountConfigurationDTO> mAccountsCfg = new ArrayList<>();
 
     private List<PjSipCall> mCalls = new ArrayList<>();
 
@@ -324,6 +332,15 @@ public class PjSipService extends Service {
                 mInitialized = true;
                 mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
+                String jsonAccountsCfg = mSharedPreferences.getString(ACCOUNTS, "");
+                if (jsonAccountsCfg.isEmpty() || jsonAccountsCfg.equals("[]")) {
+                    mAccountsCfg = new ArrayList<>();
+                } else {
+                    Gson gson = new Gson();
+                    Type type = new TypeToken <ArrayList<AccountConfigurationDTO>>(){}.getType();
+                    mAccountsCfg = gson.fromJson(jsonAccountsCfg, type);
+                }
+
                 job(new Runnable() {
                     @Override
                     public void run() {
@@ -413,7 +430,6 @@ public class PjSipService extends Service {
 
         // Remove account in PjSip
         account.delete();
-
     }
 
     public void evict(final PjSipCall call) {
@@ -596,13 +612,23 @@ public class PjSipService extends Service {
             }
 
             if (account == null) {
-                throw new Exception("Account with \"" + accountId + "\" id not found");
+                AccountConfigurationDTO accCfg = null;
+                for (AccountConfigurationDTO cfg : mAccountsCfg) {
+                    if (cfg.getId() == accountId) {
+                        accCfg = cfg;
+                        break;
+                    }
+                }
+                if (accCfg != null) {
+                    PjSipAccount acc = doAccountCreate(accCfg);
+                    mEmitter.fireAccountCreated(intent, acc);
+                } else {
+                    throw new Exception("Register Account with \"" + accountId + "\" id not found");
+                }
+            } else {
+                account.register(renew);
+                mEmitter.fireIntentHandled(intent);
             }
-
-            account.register(renew);
-
-            // -----
-            mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
             mEmitter.fireIntentHandled(intent, e);
         }
@@ -718,6 +744,12 @@ public class PjSipService extends Service {
         mTrash.add(cfg);
         mTrash.add(cred);
 
+        configuration.setId(account.getId());
+        mAccountsCfg.add(configuration);
+        Gson gson = new Gson();
+        String jsonAccCfg = gson.toJson(mAccountsCfg);
+        mSharedPreferences.edit().putString(ACCOUNTS, jsonAccCfg).apply();
+
         mAccounts.add(account);
 
         return account;
@@ -738,6 +770,16 @@ public class PjSipService extends Service {
             if (account == null) {
                 throw new Exception("Account with \"" + accountId + "\" id not found");
             }
+
+            ListIterator<AccountConfigurationDTO> iter = mAccountsCfg.listIterator();
+            while (iter.hasNext()){
+                if (iter.next().getId().equals(account.getId())){
+                    iter.remove();
+                }
+            }
+            Gson gson = new Gson();
+            String jsonAccountsCfg = gson.toJson(mAccountsCfg);
+            mSharedPreferences.edit().putString(ACCOUNTS, jsonAccountsCfg).apply();
 
             evict(account);
 
