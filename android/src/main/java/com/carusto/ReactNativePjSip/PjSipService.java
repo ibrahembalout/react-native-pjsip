@@ -185,7 +185,16 @@ public class PjSipService extends Service {
             mLogWriter = new PjSipLogWriter();
             epConfig.getLogConfig().setWriter(mLogWriter);
 
-            epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
+            if (mServiceConfiguration.isUserAgentNotEmpty()) {
+                epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
+            } else {
+                epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
+            }
+
+            if (mServiceConfiguration.isStunServersNotEmpty()) {
+                epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
+            }
+
             epConfig.getMedConfig().setHasIoqueue(true);
             epConfig.getMedConfig().setClockRate(16000);
             epConfig.getMedConfig().setQuality(10);
@@ -193,14 +202,18 @@ public class PjSipService extends Service {
             epConfig.getMedConfig().setEcTailLen(200);
             epConfig.getMedConfig().setThreadCnt(2);
             mEndpoint.libInit(epConfig);
+            mTrash.add(epConfig);
 
             TransportConfig udpTransport = new TransportConfig();
             udpTransport.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+            mUdpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, udpTransport);
+            mTrash.add(udpTransport);
+
             TransportConfig tcpTransport = new TransportConfig();
             tcpTransport.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+            mTcpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP, tcpTransport);
+            mTrash.add(tcpTransport);
 
-            mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, udpTransport);
-            mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP, tcpTransport);
             mEndpoint.libStart();
 
 //             mEndpoint = new Endpoint();
