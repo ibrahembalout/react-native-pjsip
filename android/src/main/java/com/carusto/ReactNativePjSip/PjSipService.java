@@ -1116,14 +1116,15 @@ public class PjSipService extends Service {
         // Automatically decline incoming call when user uses GSM
         if (!mGSMIdle) {
             try {
-                call.hangup(new CallOpParam(true));
+                // TODO refactoring
+                // call.hangup(new CallOpParam(true));
             } catch (Exception e) {
                 Log.w(TAG, "Failed to decline incoming call when user uses GSM", e);
             }
 
             return;
         }
-
+/**
         boolean mAppHidden = !mSharedPreferences.getBoolean("isAppForeground", false);
         // Automatically start application when incoming call received.
         if (mAppHidden) {
@@ -1155,7 +1156,7 @@ public class PjSipService extends Service {
                 }
             }
         });
-
+**/
         // -----
         mCalls.add(call);
         mEmitter.fireCallReceivedEvent(call);
@@ -1266,13 +1267,14 @@ public class PjSipService extends Service {
      * Pauses all calls, used when received GSM call.
      */
     private void doPauseAllCalls() {
-        for (PjSipCall call : mCalls) {
-            try {
-                call.hold();
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to put call on hold", e);
-            }
-        }
+        // TODO refactoring
+        // for (PjSipCall call : mCalls) {
+        //     try {
+        //         call.hold();
+        //     } catch (Exception e) {
+        //         Log.w(TAG, "Failed to put call on hold", e);
+        //     }
+        // }
     }
 
     protected class PhoneStateChangedReceiver extends BroadcastReceiver {
