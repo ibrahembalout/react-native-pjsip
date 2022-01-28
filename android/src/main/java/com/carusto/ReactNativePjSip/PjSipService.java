@@ -655,7 +655,11 @@ public class PjSipService extends Service {
 
     private void handleGetAccounts(Intent intent) {
         try {
-            mEmitter.fireAccountsRetrieved(intent, mAccounts);
+            if (mAccounts.size() > 0) {
+                mEmitter.fireAccountsRetrieved(intent, mAccounts);
+            } else {
+                mEmitter.fireAccountsRetrieved(intent, mAccountsCfg);
+            }
         } catch (Exception e) {
             mEmitter.fireIntentHandled(intent, e);
         }
@@ -745,8 +749,19 @@ public class PjSipService extends Service {
         mTrash.add(cfg);
         mTrash.add(cred);
 
+        int idx = -1;
+        for (int i = 0; i < mAccountsCfg.size(); i++) {
+            if (mAccountsCfg.get(i).getId() == account.getId()) {
+                idx = i;
+                break;
+            }
+        }
         configuration.setId(account.getId());
-        mAccountsCfg.add(configuration);
+        if (idx == -1) {
+            mAccountsCfg.add(configuration);
+        } else {
+            mAccountsCfg.set(idx, configuration);
+        }
         Gson gson = new Gson();
         String jsonAccCfg = gson.toJson(mAccountsCfg);
         mSharedPreferences.edit().putString(ACCOUNTS, jsonAccCfg).apply();

@@ -8,6 +8,8 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import com.carusto.ReactNativePjSip.dto.AccountConfigurationDTO;
+
 public class PjSipBroadcastEmiter {
 
     private static String TAG = "PjSipBroadcastEmiter";
@@ -98,11 +100,17 @@ public class PjSipBroadcastEmiter {
         context.sendBroadcast(intent);
     }
 
-    public void fireAccountsRetrieved(Intent original, List<PjSipAccount> accounts) {
+    public void fireAccountsRetrieved(Intent original, List<?> accounts) {
         try {
             JSONArray dataAccounts = new JSONArray();
-            for (PjSipAccount account : accounts) {
-                dataAccounts.put(account.toJson());
+            for (Object account : accounts) {
+                if (account instanceof PjSipAccount) {
+                    PjSipAccount acc = (PjSipAccount) account;
+                    dataAccounts.put(acc.toJson());
+                } else if (account instanceof AccountConfigurationDTO) {
+                    AccountConfigurationDTO cfg = (AccountConfigurationDTO) account;
+                    dataAccounts.put(cfg.toJson());
+                }
             }
 
             Intent intent = new Intent();

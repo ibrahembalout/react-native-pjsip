@@ -4,6 +4,7 @@ import android.content.Intent;
 import androidx.annotation.Nullable;
 
 import java.util.Map;
+import org.json.JSONObject;
 
 public class AccountConfigurationDTO {
 
@@ -123,6 +124,25 @@ public class AccountConfigurationDTO {
 
     public boolean isProxyNotEmpty() {
         return proxy != null && proxy.length() > 0;
+    }
+
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            JSONObject registration = new JSONObject();
+            registration.put("status", "");
+            registration.put("statusText", "");
+            registration.put("active", false);
+            registration.put("reason", "");
+            json.put("id", getId());
+            json.put("name", getName());
+            json.put("username", getUsername());
+            json.put("domain", getDomain());
+            json.put("registration", registration);
+            return json;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static AccountConfigurationDTO fromIntent(Intent intent) {
